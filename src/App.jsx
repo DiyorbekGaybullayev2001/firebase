@@ -1,6 +1,6 @@
 
 import './App.css'
-import { addDoc, collection, deleteDoc, doc, getDocs, } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, updateDoc, } from "firebase/firestore";
 import { db } from '../src/firebase'
 import { useEffect, useState } from 'react';
 
@@ -16,14 +16,30 @@ function App() {
   const [hotirasi, sethotirasi] = useState("")
   const [duym, setduym] = useState("")
   const [joyi, setjoyi] = useState("")
+  const [id, setid] = useState("")
+  const [show, setshow] = useState(false)
 
 
   useEffect(() =>{
-    const getData = async () => {
-      const dbValue = await getDocs(datacolliction);
-      setdata(dbValue.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    };
-    getData();
+    // const getData = async () => {
+    //   const dbValue = await getDocs(datacolliction);
+    //   setdata(dbValue.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    // };
+    // getData();
+
+    onSnapshot(datacolliction, (snapshot) => {
+      const datalist = [];
+      snapshot.docs.forEach((doc) => {
+        datalist.push({id: doc.id, ...doc.data()});
+      });
+      setdata(datalist);
+    }),
+      (error) => {
+        console.log(error);
+      }
+
+      
+
   }, []);
 
   console.log(data);
@@ -31,13 +47,47 @@ function App() {
 
   const handleCreate = async () =>{
     await addDoc(datacolliction, {Title: title, Name: model, Narxi: narxi, Yili:yili, Hotirasi: hotirasi, Ekran: duym, Joyi: joyi})
-    window.location.reload();
+    // window.location.reload();
+    settitle('')
+    setmodel('')
+    setnarxi('')
+    setyili('')
+    sethotirasi('')
+    setduym('')
+    setjoyi('')
   }
   
   
   const handDelete = async (id) => {
     await deleteDoc(doc(datacolliction, id))
-    window.location.reload();
+    // window.location.reload();
+  }
+
+  const handleEdit = async (id, Title, Name, Ekran, Hotirasi, Yili, Narxi, Joyi) =>{
+    settitle(Title)
+    setmodel(Name)
+    setduym(Ekran)
+    sethotirasi(Hotirasi)
+    setyili(Yili)
+    setnarxi(Narxi)
+    setjoyi(Joyi)
+    setid(id)
+    setshow(true)
+    // window.location.reload()
+
+  }
+
+  const handleUpdate= async () =>{
+    const updatedata = doc(db, "products", id);
+    await updateDoc(updatedata, {Title: title, Name: model, Narxi: narxi, Yili:yili, Hotirasi: hotirasi, Ekran: duym, Joyi: joyi})
+    settitle('')
+    setmodel('')
+    setnarxi('')
+    setyili('')
+    sethotirasi('')
+    setduym('')
+    setjoyi('')
+    setshow(false)
   }
 
   return (
@@ -80,7 +130,14 @@ function App() {
           <input type="text" value={joyi} onChange={(e) => setjoyi(e.target.value)}/>
         </label>
           <br />
-        <button onClick={handleCreate}>Submit</button>
+          
+          {
+            !show ?  (
+              <button onClick={handleCreate}>Submit</button>     
+            ) : (
+              <button onClick={handleUpdate}>Update</button>       
+            )
+          }
 
         </div>
 
@@ -98,6 +155,7 @@ function App() {
                   <h1>Narxi {dat.Narxi}</h1>
                   <h1>Madi in {dat.Joyi}</h1>
                   <button onClick={() => handDelete(dat.id)}>Delete</button>
+                  <button onClick={() => handleEdit(dat.id, dat.Title, dat.Name, dat.Ekran, dat.Hotirasi, dat.Yili, dat.Narxi, dat.Joyi)}>Edit</button>
                   </div>
                   <div>
                   <img src={dat.Rasmi} alt="" className='rasm'/>
